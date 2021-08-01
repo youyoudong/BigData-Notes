@@ -34,6 +34,10 @@ vim /etc/hosts
 
 ### 2.2  生成公私钥
 
+zhouad增加
+如果没有安装ssh服务，可以先安装
+sudo apt-get install openssh-server
+
 执行下面命令行生成公匙和私匙：
 
 ```
@@ -56,7 +60,10 @@ ssh-keygen -t rsa
 [root@hadoop001 .ssh]# cat id_rsa.pub >> authorized_keys
 [root@hadoop001 .ssh]# chmod 600 authorized_keys
 ```
-
+zhouad 增加
+上面内容可以终结为，如下命令
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 
 
 ## 三、Hadoop(HDFS)环境搭建
@@ -67,6 +74,7 @@ ssh-keygen -t rsa
 
 下载 Hadoop 安装包，这里我下载的是 CDH 版本的，下载地址为：http://archive.cloudera.com/cdh5/cdh/5/
 
+备注： 我是https://www.apache.org/dyn/closer.cgi/hadoop/common/hadoop-3.3.1/hadoop-3.3.1.tar.gz下载的最新版
 ```shell
 # 解压
 tar -zvxf hadoop-2.6.0-cdh5.15.2.tar.gz 
@@ -83,7 +91,7 @@ tar -zvxf hadoop-2.6.0-cdh5.15.2.tar.gz
 配置环境变量：
 
 ```
-export HADOOP_HOME=/usr/app/hadoop-2.6.0-cdh5.15.2
+export HADOOP_HOME=/usr/hadoop/hadoop-3.3.1
 export  PATH=${HADOOP_HOME}/bin:$PATH
 ```
 
@@ -113,12 +121,13 @@ export  JAVA_HOME=/usr/java/jdk1.8.0_201/
     <property>
         <!--指定 namenode 的 hdfs 协议文件系统的通信地址-->
         <name>fs.defaultFS</name>
+        <!--hadoop001指机器名字-->
         <value>hdfs://hadoop001:8020</value>
     </property>
     <property>
         <!--指定 hadoop 存储临时文件的目录-->
         <name>hadoop.tmp.dir</name>
-        <value>/home/hadoop/tmp</value>
+        <value>/usr/hadoop/hadoop-3.3.1/data</value>
     </property>
 </configuration>
 ```
@@ -169,7 +178,6 @@ sudo systemctl stop firewalld.service
 ```
 
 
-
 ### 3.6 启动HDFS
 
 进入 `${HADOOP_HOME}/sbin/` 目录下，启动 HDFS：
@@ -177,7 +185,41 @@ sudo systemctl stop firewalld.service
 ```shell
 [root@hadoop001 sbin]# ./start-dfs.sh
 ```
+```shell
+[root@nna hadoop-3.2.0]# start-dfs.sh
+Starting namenodes on [nna nns]
+ERROR: Attempting to operate on hdfs namenode as root
+ERROR: but there is no HDFS_NAMENODE_USER defined. Aborting operation.
+Starting datanodes
+ERROR: Attempting to operate on hdfs datanode as root
+ERROR: but there is no HDFS_DATANODE_USER defined. Aborting operation.
+Starting journal nodes [dn1 dn3 dn2]
+ERROR: Attempting to operate on hdfs journalnode as root
+ERROR: but there is no HDFS_JOURNALNODE_USER defined. Aborting operation.
+Starting ZK Failover Controllers on NN hosts [nna nns]
+ERROR: Attempting to operate on hdfs zkfc as root
+ERROR: but there is no HDFS_ZKFC_USER defined. Aborting operation.
+```
+如果启动报错
+在Hadoop安装目录下找到sbin文件夹
 
+在里面修改四个文件
+
+1、对于start-dfs.sh和stop-dfs.sh文件，添加下列参数：
+
+#!/usr/bin/env bash
+HDFS_DATANODE_USER=root
+HADOOP_SECURE_DN_USER=hdfs
+HDFS_NAMENODE_USER=root
+HDFS_SECONDARYNAMENODE_USER=root
+
+2、对于start-yarn.sh和stop-yarn.sh文件，添加下列参数：
+
+#!/usr/bin/env bash
+YARN_RESOURCEMANAGER_USER=root
+HADOOP_SECURE_DN_USER=yarn
+YARN_NODEMANAGER_USER=root
+重新开始start...就可以。
 
 
 ### 3.7 验证是否启动成功
@@ -190,10 +232,16 @@ sudo systemctl stop firewalld.service
 9026 NameNode
 9390 SecondaryNameNode
 ```
+```shell
+root@Linux-ANDONG:/usr/hadoop/hadoop-3.3.1/sbin# jps
+11090 NameNode
+11781 Jps
+11256 DataNode
+11530 SecondaryNameNode
+```
 
 
-
-方式二：查看 Web UI 界面，端口为 `50070`：
+方式二：查看 Web UI 界面，端口为 `50070`（3.0以上版本的端口是9870）：
 
 <div align="center"> <img width="700px" src="https://gitee.com/heibaiying/BigData-Notes/raw/master/pictures/hadoop安装验证.png"/> </div>
 
