@@ -207,18 +207,23 @@ ERROR: but there is no HDFS_ZKFC_USER defined. Aborting operation.
 
 1、对于start-dfs.sh和stop-dfs.sh文件，添加下列参数：
 
+```shell
 #!/usr/bin/env bash
 HDFS_DATANODE_USER=root
 HADOOP_SECURE_DN_USER=hdfs
 HDFS_NAMENODE_USER=root
 HDFS_SECONDARYNAMENODE_USER=root
+```
 
 2、对于start-yarn.sh和stop-yarn.sh文件，添加下列参数：
 
+```shell
 #!/usr/bin/env bash
 YARN_RESOURCEMANAGER_USER=root
 HADOOP_SECURE_DN_USER=yarn
 YARN_NODEMANAGER_USER=root
+```
+
 重新开始start...就可以。
 
 
